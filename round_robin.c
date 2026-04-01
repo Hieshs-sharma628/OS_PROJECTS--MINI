@@ -7,45 +7,42 @@ void RoundRobin(int bt[],int n,int quantum)
     
     // Find waiting time of all processes
     //Store remaining burst time
-    int rem_bt[n],i;
-    for ( i = 0 ; i < n ; i++){
+    int rem_bt[n], i;
+    for (i = 0; i < n; i++){
         rem_bt[i] = bt[i];
+        wt[i] = 0;
+        tat[i] = 0;
     }
-        int ct = 0; // Current time
-        while (1)
-        {
+
+    int ct = 0; // Current time
+    while (1)
+    {
         int done = 1;
-        for ( i = 0 ; i < n; i++)
+        for (i = 0; i < n; i++)
         {
-    
-        if (rem_bt[i] > 0)
-        {
-        done = 0; // pending process
-        
-        if (rem_bt[i] > quantum)
-        {
-        
-        ct += quantum;
-        
-        
-        rem_bt[i] -= quantum;
+            if (rem_bt[i] > 0)
+            {
+                done = 0; // pending process
+                if (rem_bt[i] > quantum)
+                {
+                    ct += quantum;
+                    rem_bt[i] -= quantum;
+                }
+                else
+                {
+                    ct += rem_bt[i];
+                    // Waiting time = current time - time used in this process
+                    wt[i] = ct - bt[i];
+                    // process is fully executed
+                    rem_bt[i] = 0;
+                }
+            }
         }
-        else
+
+        if (done == 1)
         {
-        ct = ct + rem_bt[i];
-    
-        // Waiting time = current time- time
-        // used in this process
-        wt[i] = ct - bt[i];
-        //process is fully executed
-        rem_bt[i] = 0;
+            break;
         }
-    }
-}
-    
-    
-    if (done == 1)
-    break;
     }
     
     //Find turn around time for all processes
@@ -59,6 +56,9 @@ void RoundRobin(int bt[],int n,int quantum)
     // Calculate average waiting and turnaround times
         float avg_wt = (float)total_wt / n;
         float avg_tat = (float)total_tat / n;
+
+        // Calculate throughput
+        float throughput = ct > 0 ? (float)n / ct : 0.0f;
     
         // Display process details
         printf("\nProcess\tBurst Time\tWaiting Time\tTurnaround Time\n");
@@ -69,6 +69,7 @@ void RoundRobin(int bt[],int n,int quantum)
     
         printf("\nAverage Waiting Time: %.2f\n", avg_wt);
         printf("Average Turnaround Time: %.2f\n", avg_tat);
+        printf("Throughput: %.2f\n", throughput);
     }
     
     
@@ -79,7 +80,10 @@ int main()
  
     // Input number of processes
     printf("Enter the number of processes: ");
-    scanf("%d", &n);
+    if (scanf("%d", &n) != 1 || n <= 0) {
+        printf("Invalid number of processes.\n");
+        return 1;
+    }
  
     int bt[n];
  
@@ -88,14 +92,20 @@ int main()
     for (int i = 0; i < n; i++)
     {
         printf("Process %d Burst Time: ", i + 1);
-        scanf("%d", &bt[i]);
+        if (scanf("%d", &bt[i]) != 1 || bt[i] < 0) {
+            printf("Invalid burst time.\n");
+            return 1;
+        }
     }
     
     int time_quantum;
     printf("Enter the time quantum:: ");
-    scanf("%d", &time_quantum);
+    if (scanf("%d", &time_quantum) != 1 || time_quantum <= 0) {
+        printf("Invalid time quantum.\n");
+        return 1;
+    }
     
-    // Call FCFS scheduling function
+    // Call Round Robin scheduling function
     RoundRobin(bt,n,time_quantum);
  
     return 0;
