@@ -62,8 +62,7 @@ void display(struct process p[], int n)
         total_turnaround += p[i].tat;
         total_time += p[i].bt;
 
-        printf("\nP[%d]\t\t%d\t\t%d\t\t%d\t\t%d",
-               p[i].id, p[i].bt, p[i].priority, p[i].wt, p[i].tat);
+        printf("\nP[%d]\t\t%d\t\t%d\t\t%d\t\t%d",p[i].id, p[i].bt, p[i].priority, p[i].wt, p[i].tat);
     }
 
     // Average values are totals divided by number of processes.

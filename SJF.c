@@ -64,8 +64,7 @@ int main(void)
     printf("\nPROCESS\t\tBURST TIME\tWAITING TIME\tTURNAROUND TIME\n");
     for (int i = 0; i < n; i++)
     {
-        printf("P[%d]\t\t%d\t\t%d\t\t%d\n",
-               process[i], burst_time[i], waiting_time[i], turnaround_time[i]);
+        printf("P[%d]\t\t%d\t\t%d\t\t%d\n",process[i], burst_time[i], waiting_time[i], turnaround_time[i]);
     }
 
     printf("\nAverage Waiting Time: %.2f\n", waiting_avg);
