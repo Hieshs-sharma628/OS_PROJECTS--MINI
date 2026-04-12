@@ -1,6 +1,6 @@
 #include<stdio.h>
 
-int main(void)
+int main()
 {
     int n;
     printf("\nEnter the number of processes: ");
@@ -39,7 +39,7 @@ int main(void)
     float waiting_avg = (float)total_waiting / n;
     float turnaround_avg = (float)total_turnaround / n;
     int total_time = turnaround_time[n - 1];
-    float throughput = total_time > 0 ? (float)n / total_time : 0.0f;
+    float throughput = (float)n / total_time ;
 
     printf("\nPROCESS\t\tBURST TIME\tWAITING TIME\tTURNAROUND TIME\n");
     for (int i = 0; i < n; i++)
