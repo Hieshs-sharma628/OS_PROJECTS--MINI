@@ -1,120 +1,236 @@
+/*
+    ===== BANKER'S ALGORITHM =====
+    This program checks if the system is safe from deadlock using the Banker's Algorithm.
+
+    SIMPLE EXPLANATION:
+    - Think of it like a banker who loans money to customers
+    - The banker checks: "Can I safely give resources to this process?"
+    - If ALL processes can be satisfied, the system is SAFE
+    - If even one process gets stuck, the system is UNSAFE
+*/
+
 #include <stdio.h>
 
-#define RESOURCES 3
-
-int main(void)
+int main()
 {
-    int n, i, j;
+    // STEP 1: Get input from user
+    int numberOfProcesses, numberOfResources;
+
+    printf("===== BANKER'S ALGORITHM =====\n\n");
     printf("Enter the number of processes: ");
-    scanf("%d", &n);
+    scanf("%d", &numberOfProcesses);
 
-    int alloc[n][RESOURCES];
-    int max[n][RESOURCES];
-    int remain[n][RESOURCES];          /* remain = need = max - allocation */
-    int available[RESOURCES];
-    int work[RESOURCES];
-    int finish[n];
-    int safeSeq[n];
-    int availableAfter[n][RESOURCES];  /* available list after each safe step */
+    printf("Enter the number of resources: ");
+    scanf("%d", &numberOfResources);
 
-    for (j = 0; j < RESOURCES; j++) {
-        printf("Enter available units for R%d: ", j);
+    // STEP 2: Create arrays to store data
+    // allocated[i][j] = resources already given to process i
+    int allocated[numberOfProcesses][numberOfResources];
+
+    // maximum[i][j] = total resources process i needs
+    int maximum[numberOfProcesses][numberOfResources];
+
+    // needed[i][j] = resources still needed (maximum - allocated)
+    int needed[numberOfProcesses][numberOfResources];
+
+    // available[j] = free resources available system
+    int available[numberOfResources];
+
+    // work[j] = helper array for algorithm (copy of available)
+    int work[numberOfResources];
+
+    // isFinished[i] = has process i finished? (0=NO, 1=YES)
+    int isFinished[numberOfProcesses];
+
+    // safeSequence[i] = order of safe process execution
+    int safeSequence[numberOfProcesses];
+
+    // resourcesAfter[i][j] = available resources after process i finishes
+    int resourcesAfter[numberOfProcesses][numberOfResources];
+
+    // STEP 3: Input available resources
+    printf("\n--- Enter Available Resources ---\n");
+    for (int j = 0; j < numberOfResources; j++)
+    {
+        printf("Enter available units of Resource %d: ", j);
         scanf("%d", &available[j]);
     }
 
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < RESOURCES; j++) {
-            printf("Enter allocation of P[%d] for R%d: ", i, j);
-            scanf("%d", &alloc[i][j]);
+    // STEP 4: Input allocated resources for each process
+    printf("\n--- Enter Allocated Resources for Each Process ---\n");
+    for (int i = 0; i < numberOfProcesses; i++)
+    {
+        printf("Process P%d:\n", i);
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            printf("  Allocated Resource %d: ", j);
+            scanf("%d", &allocated[i][j]);
         }
     }
 
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < RESOURCES; j++) {
-            printf("Enter max need of P[%d] for R%d: ", i, j);
-            scanf("%d", &max[i][j]);
+    // STEP 5: Input maximum resources each process may need
+    printf("\n--- Enter Maximum Resources Each Process May Need ---\n");
+    for (int i = 0; i < numberOfProcesses; i++)
+    {
+        printf("Process P%d:\n", i);
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            printf("  Maximum Resource %d: ", j);
+            scanf("%d", &maximum[i][j]);
         }
     }
 
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < RESOURCES; j++) {
-            remain[i][j] = max[i][j] - alloc[i][j];
-            if (remain[i][j] < 0) {
-                printf("\nInvalid input: max need cannot be less than allocation.\n");
+    // STEP 6: Calculate what each process still needs
+    printf("\n--- Calculating Remaining Needs ---\n");
+    for (int i = 0; i < numberOfProcesses; i++)
+    {
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            needed[i][j] = maximum[i][j] - allocated[i][j];
+
+            // Check if input is valid
+            if (needed[i][j] < 0)
+            {
+                printf("\nERROR: Process P%d has invalid data!\n", i);
+                printf("ERROR: Max need cannot be less than allocated!\n");
                 return 1;
             }
         }
     }
 
-    for (j = 0; j < RESOURCES; j++) {
+    // STEP 7: Set up work array (copy of available)
+    for (int j = 0; j < numberOfResources; j++)
+    {
         work[j] = available[j];
     }
-    for (i = 0; i < n; i++) {
-        finish[i] = 0;
+
+    // Initialize all processes as not finished
+    for (int i = 0; i < numberOfProcesses; i++)
+    {
+        isFinished[i] = 0; // 0 means not finished yet
     }
 
-    int count = 0;
-    while (count < n) {
-        int found = 0;
+    // STEP 8: Run the Banker's Algorithm
+    printf("\n--- Running Banker's Algorithm ---\n");
+    int processesComplete = 0;
 
-        for (i = 0; i < n; i++) {
-            if (finish[i] == 0) {
-                int canRun = 1;
-                for (j = 0; j < RESOURCES; j++) {
-                    if (remain[i][j] > work[j]) {
-                        canRun = 0;
-                        break;
-                    }
+    while (processesComplete < numberOfProcesses)
+    {
+        int foundSafeProcess = 0; // Did we find a process that can run?
+
+        // Check each proces
+        for (int i = 0; i < numberOfProcesses; i++)
+        {
+            // Skip if process already finished
+            if (isFinished[i] == 1)
+            {
+                continue;
+            }
+
+            // Check if this process can get all remaining resources it needs
+            int canProcessRun = 1; // Assume YES
+            for (int j = 0; j < numberOfResources; j++)
+            {
+                if (needed[i][j] > work[j])
+                {
+                    // Process needs more than available
+                    canProcessRun = 0; // Can't run
+                    break;
+                }
+            }
+
+            // If process can run, give it resources and finish it
+            if (canProcessRun == 1)
+            {
+                printf("Process P%d can run!\n", i);
+
+                // Give all resources to process and get them back
+                for (int j = 0; j < numberOfResources; j++)
+                {
+                    work[j] += allocated[i][j]; // Get resources back
+                    resourcesAfter[processesComplete][j] = work[j];
                 }
 
-                if (canRun) {
-                    for (j = 0; j < RESOURCES; j++) {
-                        work[j] += alloc[i][j];
-                        availableAfter[count][j] = work[j];
-                    }
-                    safeSeq[count] = i;
-                    finish[i] = 1;
-                    count++;
-                    found = 1;
-                }
+                // Record this process in safe sequence
+                safeSequence[processesComplete] = i;
+
+                // Mark process as finished
+                isFinished[i] = 1;
+
+                processesComplete++;
+                foundSafeProcess = 1;
             }
         }
 
-        if (!found) {
+        // If no safe process found, system is unsafe
+        if (foundSafeProcess == 0)
+        {
             break;
         }
     }
 
-    printf("\nInitial Available: [%d %d %d]\n", available[0], available[1], available[2]);
-    printf("\nProcess   Allocation   MaxNeed      Remaining(Need)\n");
-    for (i = 0; i < n; i++) {
-        printf("P[%d]      [%d %d %d]     [%d %d %d]     [%d %d %d]\n",
-               i,
-               alloc[i][0], alloc[i][1], alloc[i][2],
-               max[i][0], max[i][1], max[i][2],
-               remain[i][0], remain[i][1], remain[i][2]);
+    // STEP 9: Print Results
+    printf("\n\n===== RESULTS =====\n");
+    printf("\nInitial Available Resources: ");
+    for (int j = 0; j < numberOfResources; j++)
+    {
+        printf("[R%d: %d] ", j, available[j]);
     }
 
-    if (count == n) {
-        printf("\nSystem is in a SAFE state.\n");
-        printf("Safe sequence: ");
-        for (i = 0; i < n; i++) {
-            printf("P[%d]", safeSeq[i]);
-            if (i != n - 1) {
+    printf("\n\n--- Process Details ---\n");
+    printf("Process | Allocated | Maximum | Needed\n");
+    printf("--------|-----------|---------|-------\n");
+    for (int i = 0; i < numberOfProcesses; i++)
+    {
+        printf("P%d      | ", i);
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            printf("%d ", allocated[i][j]);
+        }
+        printf("| ");
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            printf("%d ", maximum[i][j]);
+        }
+        printf("| ");
+        for (int j = 0; j < numberOfResources; j++)
+        {
+            printf("%d ", needed[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Check if all processes finished safely
+    if (processesComplete == numberOfProcesses)
+    {
+        printf("\n✓ System is SAFE!\n");
+        printf("✓ Safe Execution Sequence: ");
+        for (int i = 0; i < numberOfProcesses; i++)
+        {
+            printf("P%d", safeSequence[i]);
+            if (i != numberOfProcesses - 1)
+            {
                 printf(" -> ");
             }
         }
         printf("\n");
 
-        printf("\nAvailable list after each completed process:\n");
-        for (i = 0; i < n; i++) {
-            printf("After P[%d]: [%d %d %d]\n",
-                   safeSeq[i],
-                   availableAfter[i][0], availableAfter[i][1], availableAfter[i][2]);
+        printf("\nResources available after each process completes:\n");
+        for (int i = 0; i < numberOfProcesses; i++)
+        {
+            printf("After P%d finishes: ", safeSequence[i]);
+            for (int j = 0; j < numberOfResources; j++)
+            {
+                printf("[R%d: %d] ", j, resourcesAfter[i][j]);
+            }
+            printf("\n");
         }
-    } else {
-        printf("\nSystem is in an UNSAFE state (no full safe sequence found).\n");
-        printf("Processes completed before stop: %d out of %d\n", count, n);
+    }
+    else
+    {
+        printf("\n✗ System is UNSAFE!\n");
+        printf("✗ Could not find a safe sequence for all processes.\n");
+        printf("✗ Deadlock is possible!\n");
     }
 
     return 0;
